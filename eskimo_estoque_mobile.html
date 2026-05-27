@@ -400,6 +400,122 @@ function buildUI() {
   });
 
   document.getElementById('data').value = new Date().toISOString().split('T')[0];
+
+  // Aba NOVOS PRODUTOS
+  var btnNovos = document.createElement('button');
+  btnNovos.className = 'tab';
+  btnNovos.textContent = '+ NOVOS';
+  btnNovos.style.color = '#e63946';
+  btnNovos.onclick = function(){ switchTab('__NOVOS__'); };
+  tabsEl.appendChild(btnNovos);
+
+  var secNovos = document.createElement('div');
+  secNovos.className = 'section';
+  secNovos.id = 'sec-__NOVOS__';
+
+  var novosTitulo = document.createElement('div');
+  novosTitulo.style.cssText = 'background:#1a1a2e;color:#fff;border-radius:10px;padding:10px 14px;margin-bottom:10px;font-size:12px;line-height:1.5';
+  novosTitulo.innerHTML = '<b style="color:#e63946">+ Novos Produtos</b><br><span style="color:rgba(255,255,255,.6);font-size:10px">Itens fora do catálogo. Preencha nome, marca e quantidade. Quando cadastrado, será removido daqui.</span>';
+  secNovos.appendChild(novosTitulo);
+
+  var novosCard = document.createElement('div');
+  novosCard.className = 'group-card';
+  novosCard.id = 'novos-card';
+
+  var novosBody = document.createElement('div');
+  novosBody.className = 'group-body';
+  novosBody.id = 'novos-body';
+
+  // Cabeçalho das colunas de novos
+  var novosColH = document.createElement('div');
+  novosColH.style.cssText = 'display:grid;grid-template-columns:1fr 100px 60px 60px 28px;gap:4px;padding:4px 8px 3px;background:#f8fafc;border-bottom:1px solid #e2e8f0;font-size:8px;font-weight:700;text-transform:uppercase;color:#94a3b8;letter-spacing:.4px;';
+  novosColH.innerHTML = '<span>Nome do produto</span><span style="text-align:center">Marca/Grupo</span><span style="text-align:center;color:#16a34a">Estoque</span><span style="text-align:center;color:#e63946">Pedido</span><span></span>';
+  novosBody.appendChild(novosColH);
+
+  novosCard.appendChild(novosBody);
+  secNovos.appendChild(novosCard);
+
+  // Botão adicionar linha
+  var btnAdd = document.createElement('button');
+  btnAdd.style.cssText = 'width:100%;background:#fff;border:2px dashed #e63946;color:#e63946;border-radius:10px;padding:10px;font-size:12px;font-weight:700;cursor:pointer;margin-top:6px;';
+  btnAdd.textContent = '+ Adicionar produto';
+  btnAdd.onclick = function(){ adicionarLinhaNovo(); };
+  secNovos.appendChild(btnAdd);
+
+  sectionsEl.appendChild(secNovos);
+
+  // Inicia com 1 linha vazia
+  adicionarLinhaNovo();
+}
+
+var novosIdx = 0;
+function adicionarLinhaNovo() {
+  var body = document.getElementById('novos-body');
+  var idx = novosIdx++;
+  var key = '__NOVOS__' + idx;
+
+  var row = document.createElement('div');
+  row.style.cssText = 'display:grid;grid-template-columns:1fr 100px 60px 60px 28px;gap:4px;padding:6px 8px;border-bottom:1px solid #f1f5f9;align-items:center;';
+  row.id = 'novo-row-' + idx;
+
+  var inNome = document.createElement('input');
+  inNome.type = 'text'; inNome.placeholder = 'Nome do produto';
+  inNome.style.cssText = 'width:100%;border:1.5px solid #e2e8f0;border-radius:6px;padding:5px 6px;font-size:10px;font-weight:500;background:#f8fafc;';
+
+  var inMarca = document.createElement('input');
+  inMarca.type = 'text'; inMarca.placeholder = 'Marca';
+  inMarca.style.cssText = 'width:100%;border:1.5px solid #e2e8f0;border-radius:6px;padding:5px 4px;font-size:10px;text-align:center;background:#f8fafc;';
+
+  var inEst = document.createElement('input');
+  inEst.type = 'number'; inEst.inputMode = 'numeric'; inEst.placeholder = '0';
+  inEst.style.cssText = 'width:100%;border:1.5px solid #e2e8f0;border-radius:6px;padding:5px 2px;font-size:11px;font-weight:700;text-align:center;background:#f8fafc;-moz-appearance:textfield;';
+
+  var inPed = document.createElement('input');
+  inPed.type = 'number'; inPed.inputMode = 'numeric'; inPed.placeholder = '0';
+  inPed.style.cssText = 'width:100%;border:1.5px solid #e2e8f0;border-radius:6px;padding:5px 2px;font-size:11px;font-weight:700;text-align:center;background:#f8fafc;-moz-appearance:textfield;';
+
+  var btnDel = document.createElement('button');
+  btnDel.textContent = '✕';
+  btnDel.style.cssText = 'background:none;border:none;color:#94a3b8;font-size:14px;cursor:pointer;padding:2px;';
+  btnDel.onclick = function() {
+    delete values[key];
+    updateCount();
+    row.remove();
+  };
+
+  function syncNovo() {
+    var nome  = inNome.value.trim();
+    var marca = inMarca.value.trim();
+    var est   = inEst.value;
+    var ped   = inPed.value;
+    inEst.style.borderColor = est !== '' ? '#22c55e' : '#e2e8f0';
+    inEst.style.color       = est !== '' ? '#15803d' : '';
+    inEst.style.background  = est !== '' ? '#f0fdf4' : '#f8fafc';
+    inPed.style.borderColor = ped !== '' ? '#e63946' : '#e2e8f0';
+    inPed.style.color       = ped !== '' ? '#b91c1c' : '';
+    inPed.style.background  = ped !== '' ? '#fff1f2' : '#f8fafc';
+    if (nome || est !== '' || ped !== '') {
+      values[key] = {
+        tab: 'NOVOS PRODUTOS', group: (marca || 'Sem marca'),
+        name: nome || '(sem nome)', qtdCx: null, eng: null,
+        estCx: '', estAvul: est, estTot: est !== '' ? parseInt(est,10)||0 : '',
+        pedCx: '', pedAvul: ped, pedTot: ped !== '' ? parseInt(ped,10)||0 : ''
+      };
+    } else { delete values[key]; }
+    updateCount();
+  }
+
+  inNome.addEventListener('input',  syncNovo);
+  inMarca.addEventListener('input', syncNovo);
+  inEst.addEventListener('input',   syncNovo);
+  inPed.addEventListener('input',   syncNovo);
+
+  row.appendChild(inNome);
+  row.appendChild(inMarca);
+  row.appendChild(inEst);
+  row.appendChild(inPed);
+  row.appendChild(btnDel);
+  body.appendChild(row);
 }
 
 function switchTab(tab) {
