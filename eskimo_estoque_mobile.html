@@ -370,7 +370,7 @@ function buildUI() {
 
           if (estAny || pedAny) {
             values[key] = {
-              name: name, qtdCx: qtdCx, eng: eng,
+              tab: tab, group: group, name: name, qtdCx: qtdCx, eng: eng,
               estCx: inEstCx.value, estAvul: inEstAvul.value, estTot: estAny ? estT : '',
               pedCx: inPedCx.value, pedAvul: inPedAvul.value, pedTot: pedAny ? pedT : ''
             };
@@ -424,27 +424,46 @@ function openModal() {
   if (entries.length === 0) {
     body.innerHTML = '<div class="empty-msg">Nenhum item preenchido ainda.</div>';
   } else {
-    var tbl = document.createElement('table');
-    tbl.className = 'modal-tbl';
-    tbl.innerHTML =
-      '<thead><tr><th>Produto</th>' +
-      '<th class="th-est">Est.cx</th><th class="th-est">+unit</th><th class="th-est">Total</th>' +
-      '<th class="th-ped">Ped.cx</th><th class="th-ped">+unit</th><th class="th-ped">Total</th>' +
-      '</tr></thead><tbody></tbody>';
-    var tbody = tbl.querySelector('tbody');
+    var grouped = {};
     entries.forEach(function(e) {
-      var tr = document.createElement('tr');
-      tr.innerHTML =
-        '<td>' + e.name + '</td>' +
-        '<td class="td-est">'     + (e.estCx   || '-') + '</td>' +
-        '<td class="td-est">'     + (e.estAvul || '-') + '</td>' +
-        '<td class="td-tot-est">' + (e.estTot !== '' ? e.estTot : '-') + '</td>' +
-        '<td class="td-ped">'     + (e.pedCx   || '-') + '</td>' +
-        '<td class="td-ped">'     + (e.pedAvul || '-') + '</td>' +
-        '<td class="td-tot-ped">' + (e.pedTot !== '' ? e.pedTot : '-') + '</td>';
-      tbody.appendChild(tr);
+      if (!grouped[e.tab]) grouped[e.tab] = {};
+      if (!grouped[e.tab][e.group]) grouped[e.tab][e.group] = [];
+      grouped[e.tab][e.group].push(e);
     });
-    body.appendChild(tbl);
+    Object.keys(grouped).forEach(function(tabKey) {
+      var tabHdr = document.createElement('div');
+      tabHdr.style.cssText = 'background:#1a1a2e;color:#fff;font-size:11px;font-weight:800;letter-spacing:.8px;text-transform:uppercase;padding:6px 10px;border-radius:8px;margin:10px 0 4px;';
+      tabHdr.textContent = tabKey;
+      body.appendChild(tabHdr);
+      Object.keys(grouped[tabKey]).forEach(function(grpKey) {
+        var grpHdr = document.createElement('div');
+        grpHdr.style.cssText = 'background:#e2e8f0;color:#475569;font-size:9px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;padding:4px 10px;margin-bottom:2px;border-radius:4px;';
+        grpHdr.textContent = grpKey;
+        body.appendChild(grpHdr);
+        var tbl = document.createElement('table');
+        tbl.className = 'modal-tbl';
+        tbl.style.marginBottom = '6px';
+        tbl.innerHTML =
+          '<thead><tr><th>Produto</th>' +
+          '<th class="th-est">Est.cx</th><th class="th-est">+unit</th><th class="th-est">Total</th>' +
+          '<th class="th-ped">Ped.cx</th><th class="th-ped">+unit</th><th class="th-ped">Total</th>' +
+          '</tr></thead><tbody></tbody>';
+        var tbody = tbl.querySelector('tbody');
+        grouped[tabKey][grpKey].forEach(function(e) {
+          var tr = document.createElement('tr');
+          tr.innerHTML =
+            '<td>' + e.name + '</td>' +
+            '<td class="td-est">'     + (e.estCx   || '-') + '</td>' +
+            '<td class="td-est">'     + (e.estAvul || '-') + '</td>' +
+            '<td class="td-tot-est">' + (e.estTot !== '' ? e.estTot : '-') + '</td>' +
+            '<td class="td-ped">'     + (e.pedCx   || '-') + '</td>' +
+            '<td class="td-ped">'     + (e.pedAvul || '-') + '</td>' +
+            '<td class="td-tot-ped">' + (e.pedTot !== '' ? e.pedTot : '-') + '</td>';
+          tbody.appendChild(tr);
+        });
+        body.appendChild(tbl);
+      });
+    });
   }
 
   document.getElementById('modal-overlay').classList.add('open');
@@ -472,15 +491,28 @@ function baixarArquivo() {
   linhas.push('PRODUTO                          | EST.CX | +UNIT | TOT.EST | PED.CX | +UNIT | TOT.PED');
   linhas.push('─'.repeat(95));
 
+  var grouped2 = {};
   entries.forEach(function(e) {
-    var nome = e.name.padEnd(32).substring(0,32);
-    var ec = (e.estCx   || '-').toString().padStart(6);
-    var ea = (e.estAvul || '-').toString().padStart(5);
-    var et = (e.estTot !== '' ? e.estTot : '-').toString().padStart(7);
-    var pc = (e.pedCx   || '-').toString().padStart(6);
-    var pa = (e.pedAvul || '-').toString().padStart(5);
-    var pt = (e.pedTot !== '' ? e.pedTot : '-').toString().padStart(7);
-    linhas.push(nome + ' | ' + ec + ' | ' + ea + ' | ' + et + ' | ' + pc + ' | ' + pa + ' | ' + pt);
+    if (!grouped2[e.tab]) grouped2[e.tab] = {};
+    if (!grouped2[e.tab][e.group]) grouped2[e.tab][e.group] = [];
+    grouped2[e.tab][e.group].push(e);
+  });
+  Object.keys(grouped2).forEach(function(tabKey) {
+    linhas.push('');
+    linhas.push('=== ' + tabKey.toUpperCase() + ' ===');
+    Object.keys(grouped2[tabKey]).forEach(function(grpKey) {
+      linhas.push('--- ' + grpKey + ' ---');
+      grouped2[tabKey][grpKey].forEach(function(e) {
+        var nome = e.name.padEnd(32).substring(0,32);
+        var ec = (e.estCx   || '-').toString().padStart(6);
+        var ea = (e.estAvul || '-').toString().padStart(5);
+        var et = (e.estTot !== '' ? e.estTot : '-').toString().padStart(7);
+        var pc = (e.pedCx   || '-').toString().padStart(6);
+        var pa = (e.pedAvul || '-').toString().padStart(5);
+        var pt = (e.pedTot !== '' ? e.pedTot : '-').toString().padStart(7);
+        linhas.push(nome + ' | ' + ec + ' | ' + ea + ' | ' + et + ' | ' + pc + ' | ' + pa + ' | ' + pt);
+      });
+    });
   });
 
   linhas.push('');
